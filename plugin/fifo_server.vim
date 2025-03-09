@@ -1,3 +1,8 @@
+if exists("fifo_server")
+	finish
+endif
+let fifo_server = 1
+
 if !has('python3')
     echo "Error: Requires Vim compiled with +python3"
     finish
