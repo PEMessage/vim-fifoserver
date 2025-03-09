@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+
+
+import json
+import base64
+from dataclasses import dataclass, asdict
+from typing import Any, List
+import argparse
+import os
+
+
+@dataclass
+class Context:
+    pwd: str
+
+@dataclass
+class Message:
+    mode: str
+    context: Context
+    arguments: List[str]
+
+    def serialize(self) -> str:
+        """Serialize the dataclass instance to a base64 encoded JSON string."""
+        json_str = json.dumps(asdict(self))
+        return base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
+
+    @classmethod
+    def deserialize(cls, base64_str: str) -> 'Message':
+        """Deserialize a base64 encoded JSON string to a Message instance."""
+        json_str = base64.b64decode(base64_str.encode('utf-8')).decode('utf-8')
+        data = json.loads(json_str)
+        return cls(**data)
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Vim FIFO client')
+    parser.add_argument('-f', '--fifo',
+        default=os.path.expanduser('~/.cache/vim/fifo/public.fifo'),
+        help='Path to FIFO file')
+    parser.add_argument('arguments', nargs=argparse.REMAINDER,
+        help='Command and arguments to send')
+    return parser.parse_args()
+
+def main():
+    args = parse_args()
+    fifo_path = os.path.expanduser(args.fifo)
+
+    if not os.path.exists(fifo_path):
+        print(f"Error: FIFO {fifo_path} doesn't exist. Is the server running?")
+        sys.exit(1)
+
+    current_dir = os.getcwd()
+    context = Context(pwd=current_dir)
+    message = Message(
+        mode='vim-exe',
+        context=context,
+        arguments=args.arguments
+    )
+
+    encoded = message.serialize()
+
+    # print(Message.deserialize(encoded))
+
+    try:
+        with open(fifo_path, 'w') as fifo:
+            fifo.write(encoded + '\n')
+    except Exception as e:
+        print(f"Failed to send message: {e}")
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()
