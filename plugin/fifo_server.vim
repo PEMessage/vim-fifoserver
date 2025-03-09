@@ -155,4 +155,3 @@ EOF
 
 command! -nargs=? -complete=file FIFOStart py3 start_fifo_server(vim.eval('"<args>"'))
 command! FIFOStop py3 stop_fifo_server()
-command! FIFORestart py3 restart_fifo_server()
