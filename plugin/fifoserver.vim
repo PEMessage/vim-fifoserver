@@ -97,11 +97,11 @@ def handle_command(encoded_message):
     except Exception as e:
         print(f"Command execution failed: {e}")
 
-def fifo_listener():
+def fifo_listener(fifo_path):
     while getattr(threading.current_thread(), "do_run", True):
         try:
-            ensure_fifo(_fifo_path)
-            with open(_fifo_path, 'r') as fifo:
+            ensure_fifo(fifo_path)
+            with open(fifo_path, 'r') as fifo:
                 while True:
                     line = fifo.readline().strip()
                     if line:
@@ -120,7 +120,7 @@ def start_fifo_server(fifo_path_arg):
     _fifo_path = expand_path(fifo_path_arg) if fifo_path_arg else expand_path(DEFAULT_FIFO)
     ensure_fifo(_fifo_path)
     
-    _fifo_thread = threading.Thread(target=fifo_listener, daemon=True)
+    _fifo_thread = threading.Thread(target=fifo_listener, daemon=True, kwargs={'fifo_path': _fifo_path })
     _fifo_thread.do_run = True
     _fifo_thread.start()
 
