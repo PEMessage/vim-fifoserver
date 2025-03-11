@@ -26,18 +26,24 @@ def expand_path(path):
 DEFAULT_FIFO = '~/.cache/vim/fifo/public.fifo'
 #FIFO_PATH = expand_path(DEFAULT_FIFO)
 
-@dataclass
 class Context:
-    pwd: str
+    def __init__(self, pwd: str):
+        self.pwd = pwd
 
-@dataclass
+
 class Message:
-    mode: str
-    context: Context
-    arguments: List[str]
+    def __init__(self, mode: str, context: Context, arguments: List[str]):
+        self.mode = mode
+        self.context = context
+        self.arguments = arguments
 
     def serialize(self) -> str:
-        json_str = json.dumps(asdict(self))
+        data = {
+            'mode': self.mode,
+            'context': self.context.__dict__,
+            'arguments': self.arguments
+        }
+        json_str = json.dumps(data)
         return base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
 
     @classmethod
@@ -45,7 +51,13 @@ class Message:
         json_str = base64.b64decode(base64_str.encode('utf-8')).decode('utf-8')
         data = json.loads(json_str)
         print(data)
-        return cls(**data)
+        print(data['context']['pwd'])
+        context = Context(pwd=data['context']['pwd'])
+        return cls(
+            mode=data['mode'],
+            context=context,
+            arguments=data['arguments']
+        )
 
 def ensure_fifo(fifo_path):
     fifo_dir = os.path.dirname(fifo_path)
@@ -87,8 +99,8 @@ def handle_command(encoded_message):
     command = ' '.join(escaped_args)
 
     # Escape working directory
-    print(msg.context["pwd"])
-    safe_pwd = msg.context["pwd"].replace("'", "''")
+    print(msg.context.pwd)
+    safe_pwd = msg.context.pwd.replace("'", "''")
     
     # Build command with directory context and revert
     vim_command = (
