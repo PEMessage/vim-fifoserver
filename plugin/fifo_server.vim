@@ -8,6 +8,8 @@ if !has('python3')
     finish
 endif
 
+
+function! s:FIFOServerStart(fifo_path)
 python3 << EOF
 import vim
 import os
@@ -163,7 +165,8 @@ def restart_fifo_server():
 #thread.start()
 EOF
 
-" command! -nargs=? -complete=file FIFOStart call s:FIFOServerStart(<q-args>)
+py3 start_fifo_server(vim.eval('a:fifo_path'))
+endfunction
 
-command! -nargs=? -complete=file FIFOStart py3 start_fifo_server(vim.eval('"<args>"'))
-command! FIFOStop py3 stop_fifo_server()
+command! -nargs=? -complete=file FIFOStart call s:FIFOServerStart(<q-args>)
+" command! FIFOStop py3 stop_fifo_server()
