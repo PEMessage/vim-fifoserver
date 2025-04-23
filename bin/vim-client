@@ -33,6 +33,7 @@ class Message:
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Vim FIFO client')
+    parser.add_argument('-d', '--debug', action='store_true', default=False)
     parser.add_argument('-f', '--fifo',
         default=os.path.expanduser('~/.cache/vim/fifo/public.fifo'),
         help='Path to FIFO file')
@@ -48,13 +49,32 @@ def main():
         print(f"Error: FIFO {fifo_path} doesn't exist. Is the server running?")
         sys.exit(1)
 
+    arguments = args.arguments # default passthought
+
+    if len(args.arguments) == 2:
+        is_num = [arg.startswith('+') and arg[1:].isdigit() for arg in args.arguments]
+
+        if sum(is_num) == 1:  # Exactly one True
+            num_idx = is_num.index(True)
+            other_idx = 1 - num_idx # Simple since there are only 2 elements,
+                                    # for any two elements, if want to get another one:
+                                    # x + y = z 
+                                    #   -> z - x = y
+                                    #   -> z - y = x 
+            arguments = ["edit", f"{args.arguments[other_idx]}|{args.arguments[num_idx][1:]}", "|", "normal", "zz"]
+                
+
+
     current_dir = os.getcwd()
     context = Context(pwd=current_dir)
     message = Message(
         mode='vim-exe',
         context=context,
-        arguments=args.arguments
+        arguments=arguments
     )
+    if args.debug:
+        print(message)
+        exit()
 
     encoded = message.serialize()
 
